@@ -1,39 +1,50 @@
 // create web server
-// create an array of comments
-// create a route for GET /comments
-// create a route for POST /comments
-// create a route for DELETE /comments/:id
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const app = express();
-const port = 3000;
+const mysql = require('mysql');
+const cors = require('cors');
 
+const app = express();
+app.use(cors());
 app.use(bodyParser.json());
 
-let comments = [
-  {id: 1, author: 'Anonymous', body: 'Hello world!'},
-  {id: 2, author: 'Anonymous', body: 'This is a comment.'},
-  {id: 3, author: 'Anonymous', body: 'This is another comment.'}
-];
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'root',
+    database: 'comments'
+});
+
+db.connect((err) => {
+    if (err) {
+        console.log('Error connecting to database');
+    } else {
+        console.log('Connected to database');
+    }
+});
 
 app.get('/comments', (req, res) => {
-  res.json(comments);
+    db.query('SELECT * FROM comments', (err, rows) => {
+        if (err) {
+            console.log(err);
+        } else {
+            res.send(rows);
+        }
+    });
 });
 
 app.post('/comments', (req, res) => {
-  const comment = req.body;
-  comment.id = comments.length + 1;
-  comments.push(comment);
-  res.json(comment);
+    const comment = req.body.comment;
+    db.query('INSERT INTO comments (comment) VALUES (?)', [comment], (err, result) => {
+        if (err) {
+            console.log(err);
+        } else {
+            res.send('Values inserted');
+        }
+    });
 });
 
-app.delete('/comments/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  comments = comments.filter(comment => comment.id !== id);
-  res.json({status: 'ok'});
-});
-
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.listen(3001, () => {
+    console.log('Server is running on port 3001');
 });
